@@ -3,11 +3,11 @@
 
 import type { ReactNode } from 'react';
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { 
-  GoogleAuthProvider, 
-  signInWithPopup, 
-  signOut, 
-  onAuthStateChanged, 
+import {
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged,
   type User,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword
@@ -37,16 +37,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
+    // Skip auth initialization during build or if auth is not properly initialized
+    if (!auth || typeof window === 'undefined') {
       setLoading(false);
-    });
-    return () => unsubscribe();
+      return;
+    }
+
+    try {
+      const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+        setUser(currentUser);
+        setLoading(false);
+      });
+      return () => unsubscribe();
+    } catch (error) {
+      console.error('Auth state change error:', error);
+      setLoading(false);
+    }
   }, []);
 
   const clearError = () => setError(null);
 
   const signInWithGoogle = async () => {
+    if (!auth) {
+      setError('Authentication not initialized');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     const provider = new GoogleAuthProvider();
@@ -80,7 +96,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
     }
   };
-  
+
   const signInWithEmailPassword = async (email: string, password: string) => {
     setLoading(true);
     setError(null);

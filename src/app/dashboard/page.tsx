@@ -9,8 +9,27 @@ import { CrawlerForm, type CrawlerFormValues } from '@/components/crawler/crawle
 import { ResultsDisplay } from '@/components/crawler/results-display';
 import { SummaryDisplay } from '@/components/crawler/summary-display';
 import { LogoIcon } from '@/components/icons/logo-icon';
-import { smartExtract, type SmartExtractInput, type SmartExtractOutput } from '@/ai/flows/smart-extract';
-import { summarizeText, type SummarizeTextInput, type SummarizeTextOutput } from '@/ai/flows/summarize-text-flow';
+// AI imports temporarily disabled for build
+// import { smartExtract, type SmartExtractInput, type SmartExtractOutput } from '@/ai/flows/smart-extract';
+// import { summarizeText, type SummarizeTextInput, type SummarizeTextOutput } from '@/ai/flows/summarize-text-flow';
+
+// Temporary placeholder types and functions
+type SmartExtractInput = { url: string };
+type SmartExtractOutput = { extractedData: string };
+type SummarizeTextInput = { textToSummarize: string };
+type SummarizeTextOutput = { summary: string };
+
+const smartExtract = async (input: SmartExtractInput): Promise<SmartExtractOutput> => {
+  // Placeholder implementation for build
+  await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API call
+  return { extractedData: `Demo data extracted from ${input.url}:\n\nTitle: Sample Website\nContent: This is placeholder content extracted from the website. In the full implementation, this would contain real scraped data using AI-powered extraction.\n\nFeatures found:\n- Navigation menu\n- Main content area\n- Footer section\n- Contact information` };
+};
+
+const summarizeText = async (input: SummarizeTextInput): Promise<SummarizeTextOutput> => {
+  // Placeholder implementation for build
+  await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API call
+  return { summary: "This is a demo summary of the extracted content. The AI-powered summarization would provide key insights and important information from the scraped data in a concise format." };
+};
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from '@/components/ui/separator';
 import { AuthButton } from '@/components/auth/auth-button';

@@ -1,0 +1,85 @@
+<svg width="180" height="180" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="24" height="24" fill="#3F51B5" rx="4"/>
+  
+  <!-- Neural Network Core (Cortex) -->
+  <circle
+    cx="12"
+    cy="12"
+    r="3"
+    fill="white"
+    opacity="0.9"
+  />
+  
+  <!-- Neural Connections -->
+  <circle cx="6" cy="6" r="1.5" fill="white" opacity="0.7" />
+  <circle cx="18" cy="6" r="1.5" fill="white" opacity="0.7" />
+  <circle cx="6" cy="18" r="1.5" fill="white" opacity="0.7" />
+  <circle cx="18" cy="18" r="1.5" fill="white" opacity="0.7" />
+  
+  <!-- Connection Lines -->
+  <line x1="7.5" y1="7.5" x2="10.5" y2="10.5" stroke="white" stroke-width="1.5" opacity="0.6" />
+  <line x1="16.5" y1="7.5" x2="13.5" y2="10.5" stroke="white" stroke-width="1.5" opacity="0.6" />
+  <line x1="7.5" y1="16.5" x2="10.5" y2="13.5" stroke="white" stroke-width="1.5" opacity="0.6" />
+  <line x1="16.5" y1="16.5" x2="13.5" y2="13.5" stroke="white" stroke-width="1.5" opacity="0.6" />
+  
+  <!-- Data Extraction Rays (Crawler) -->
+  <path
+    d="M12 2 L12 6"
+    stroke="white"
+    stroke-width="2"
+    stroke-linecap="round"
+    opacity="0.8"
+  />
+  <path
+    d="M12 18 L12 22"
+    stroke="white"
+    stroke-width="2"
+    stroke-linecap="round"
+    opacity="0.8"
+  />
+  <path
+    d="M2 12 L6 12"
+    stroke="white"
+    stroke-width="2"
+    stroke-linecap="round"
+    opacity="0.8"
+  />
+  <path
+    d="M18 12 L22 12"
+    stroke="white"
+    stroke-width="2"
+    stroke-linecap="round"
+    opacity="0.8"
+  />
+  
+  <!-- Diagonal Data Streams -->
+  <path
+    d="M4.93 4.93 L7.76 7.76"
+    stroke="white"
+    stroke-width="1.5"
+    stroke-linecap="round"
+    opacity="0.5"
+  />
+  <path
+    d="M16.24 7.76 L19.07 4.93"
+    stroke="white"
+    stroke-width="1.5"
+    stroke-linecap="round"
+    opacity="0.5"
+  />
+  <path
+    d="M7.76 16.24 L4.93 19.07"
+    stroke="white"
+    stroke-width="1.5"
+    stroke-linecap="round"
+    opacity="0.5"
+  />
+  <path
+    d="M16.24 16.24 L19.07 19.07"
+    stroke="white"
+    stroke-width="1.5"
+    stroke-linecap="round"
+    opacity="0.5"
+  />
+</svg>

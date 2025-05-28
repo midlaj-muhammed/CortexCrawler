@@ -3,7 +3,7 @@
 > **AI-Powered Web Scraping SaaS Platform**
 > Intelligent data extraction with neural network precision
 
-> 🌐 **[Live Demo]()**
+> 🌐 **[Live Demo](https://cortex-crawler.vercel.app/)**
 
 
 [![Next.js](https://img.shields.io/badge/Next.js-15.2.3-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)

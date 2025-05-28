@@ -195,7 +195,7 @@ export function CrawlerForm({ onSubmit, isLoading }: CrawlerFormProps) {
                   />
                 </FormControl>
                 <FormDescription>
-                  Enter CSS selectors. (Note: CSS Selector functionality is UI only for this demo if not using 'Smart AI' mode.)
+                  Enter CSS selectors (comma-separated for multiple). Use the AI Selector Assistant to generate optimal selectors.
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -315,13 +315,13 @@ export function CrawlerForm({ onSubmit, isLoading }: CrawlerFormProps) {
           )}
         />
 
-        {(currentScrapingMode === "cssSelector" || currentScrapingMode === "fullPageRender" || currentScrapingMode === "apiEndpoint" || paginationEnabled || form.getValues("schedule") !== "none" || form.getValues("exportFormat") === "excel" || form.getValues("webhookUrl") ) && (
+        {(currentScrapingMode === "fullPageRender" || currentScrapingMode === "apiEndpoint" || paginationEnabled || form.getValues("schedule") !== "none" || form.getValues("exportFormat") === "excel" || form.getValues("webhookUrl") ) && (
             <Alert variant="default" className="bg-accent/10 border-accent/50 text-accent-foreground">
               <Info className="h-4 w-4 !text-accent-foreground" />
               <AlertTitle>Advanced Feature Notice</AlertTitle>
               <AlertDescription>
-                Some selected advanced features like CSS Selector (when not using Smart AI), Full Page Render, API Endpoint scraping, Pagination, Scheduling, Excel export, and Webhooks are currently UI demonstrations.
-                Only Smart Extract AI with JSON/CSV export is fully functional for extraction and summarization.
+                Some selected advanced features like Full Page Render, API Endpoint scraping, Pagination, Scheduling, Excel export, and Webhooks are currently UI demonstrations.
+                Smart Extract AI and CSS Selector modes with JSON/CSV export are fully functional for extraction and summarization.
               </AlertDescription>
             </Alert>
         )}

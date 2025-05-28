@@ -4,15 +4,24 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, AlertCircle, FileText } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Loader2, AlertCircle, FileText, Zap, BarChart3, Clock } from "lucide-react";
 
 interface SummaryDisplayProps {
   summary: string | null;
   isLoading: boolean;
   error: string | null;
+  summaryStats?: {
+    originalLength?: number;
+    summaryLength?: number;
+    compressionRatio?: number;
+    processingTime?: number;
+    summaryType?: string;
+  };
 }
 
-export function SummaryDisplay({ summary, isLoading, error }: SummaryDisplayProps) {
+export function SummaryDisplay({ summary, isLoading, error, summaryStats }: SummaryDisplayProps) {
   const renderContent = () => {
     if (isLoading) {
       return (
@@ -35,9 +44,51 @@ export function SummaryDisplay({ summary, isLoading, error }: SummaryDisplayProp
 
     if (summary) {
       return (
-        <ScrollArea className="h-60 w-full rounded-md border p-4 bg-muted/20">
-          <p className="text-sm whitespace-pre-wrap break-words">{summary}</p>
-        </ScrollArea>
+        <div className="space-y-4">
+          {/* Summary Statistics */}
+          {summaryStats && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {summaryStats.summaryType && (
+                <Badge variant="secondary" className="flex items-center">
+                  <Zap className="h-3 w-3 mr-1" />
+                  {summaryStats.summaryType.replace('-', ' ')}
+                </Badge>
+              )}
+              {summaryStats.compressionRatio && (
+                <Badge variant="outline" className="flex items-center">
+                  <BarChart3 className="h-3 w-3 mr-1" />
+                  {summaryStats.compressionRatio}% compression
+                </Badge>
+              )}
+              {summaryStats.processingTime && (
+                <Badge variant="outline" className="flex items-center">
+                  <Clock className="h-3 w-3 mr-1" />
+                  {summaryStats.processingTime}ms
+                </Badge>
+              )}
+            </div>
+          )}
+
+          {/* Summary Content */}
+          <ScrollArea className="h-60 w-full rounded-md border p-4 bg-muted/20">
+            <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">{summary}</p>
+          </ScrollArea>
+
+          {/* Additional Stats */}
+          {summaryStats && (summaryStats.originalLength || summaryStats.summaryLength) && (
+            <>
+              <Separator />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                {summaryStats.originalLength && (
+                  <span>Original: {summaryStats.originalLength.toLocaleString()} chars</span>
+                )}
+                {summaryStats.summaryLength && (
+                  <span>Summary: {summaryStats.summaryLength.toLocaleString()} chars</span>
+                )}
+              </div>
+            </>
+          )}
+        </div>
       );
     }
 

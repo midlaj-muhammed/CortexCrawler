@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { CrawlerForm, type CrawlerFormValues } from '@/components/crawler/crawler-form';
 import { ResultsDisplay } from '@/components/crawler/results-display';
 import { SummaryDisplay } from '@/components/crawler/summary-display';
+import { SelectorAssistant } from '@/components/crawler/selector-assistant';
 import { LogoIcon } from '@/components/icons/logo-icon';
 // AI imports temporarily disabled for build
 // import { smartExtract, type SmartExtractInput, type SmartExtractOutput } from '@/ai/flows/smart-extract';
@@ -17,18 +18,173 @@ import { LogoIcon } from '@/components/icons/logo-icon';
 type SmartExtractInput = { url: string };
 type SmartExtractOutput = { extractedData: string };
 type SummarizeTextInput = { textToSummarize: string };
-type SummarizeTextOutput = { summary: string };
+type SummarizeTextOutput = {
+  summary: string;
+  stats?: {
+    originalLength?: number;
+    summaryLength?: number;
+    compressionRatio?: number;
+    processingTime?: number;
+    summaryType?: string;
+  };
+};
 
 const smartExtract = async (input: SmartExtractInput): Promise<SmartExtractOutput> => {
-  // Placeholder implementation for build
-  await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API call
-  return { extractedData: `Demo data extracted from ${input.url}:\n\nTitle: Sample Website\nContent: This is placeholder content extracted from the website. In the full implementation, this would contain real scraped data using AI-powered extraction.\n\nFeatures found:\n- Navigation menu\n- Main content area\n- Footer section\n- Contact information` };
+  try {
+    const response = await fetch('/api/ai/smart-extract', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        url: input.url,
+        extractionFocus: 'general',
+        customInstructions: 'Extract the most valuable and relevant information from this webpage, focusing on main content, key data points, and actionable information.'
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to perform smart extraction');
+    }
+
+    const result = await response.json();
+
+    // Format the extracted data with metadata and insights
+    let formattedData = `SMART AI EXTRACTION RESULTS\n`;
+    formattedData += `URL: ${result.metadata.url}\n`;
+    formattedData += `Page Title: ${result.metadata.pageTitle}\n`;
+    formattedData += `Page Type: ${result.metadata.pageType}\n`;
+    formattedData += `Processing Time: ${result.metadata.processingTime}ms\n\n`;
+
+    formattedData += `EXTRACTED CONTENT:\n`;
+    formattedData += `${result.extractedData}\n\n`;
+
+    if (result.insights.mainTopics.length > 0) {
+      formattedData += `MAIN TOPICS:\n`;
+      result.insights.mainTopics.forEach((topic, index) => {
+        formattedData += `${index + 1}. ${topic}\n`;
+      });
+      formattedData += `\n`;
+    }
+
+    if (result.insights.keyDataPoints.length > 0) {
+      formattedData += `KEY DATA POINTS:\n`;
+      result.insights.keyDataPoints.forEach((point, index) => {
+        formattedData += `• ${point}\n`;
+      });
+      formattedData += `\n`;
+    }
+
+    formattedData += `CONTENT QUALITY: ${result.insights.contentQuality.toUpperCase()}\n`;
+
+    if (result.insights.recommendedActions.length > 0) {
+      formattedData += `\nRECOMMENDED ACTIONS:\n`;
+      result.insights.recommendedActions.forEach((action, index) => {
+        formattedData += `${index + 1}. ${action}\n`;
+      });
+    }
+
+    return { extractedData: formattedData };
+  } catch (error) {
+    console.error('Error calling Smart Extract AI API:', error);
+    // Fallback to basic extraction if API fails
+    const fallbackData = generateFallbackSmartExtraction(input.url);
+    return { extractedData: fallbackData };
+  }
+};
+
+// Fallback function for basic smart extraction
+const generateFallbackSmartExtraction = (url: string): string => {
+  return `SMART AI EXTRACTION (Fallback Mode)\nURL: ${url}\n\nNote: AI-powered extraction is temporarily unavailable. Please try again later or use CSS Selector mode for specific data extraction.\n\nFallback extraction attempted but requires AI service to be available for intelligent content analysis.`;
 };
 
 const summarizeText = async (input: SummarizeTextInput): Promise<SummarizeTextOutput> => {
-  // Placeholder implementation for build
-  await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API call
-  return { summary: "This is a demo summary of the extracted content. The AI-powered summarization would provide key insights and important information from the scraped data in a concise format." };
+  try {
+    // Truncate text if it's too long for summarization (max 45,000 chars to leave buffer)
+    let textToSummarize = input.textToSummarize;
+    const maxLength = 45000;
+    let wasTruncated = false;
+
+    if (textToSummarize.length > maxLength) {
+      textToSummarize = textToSummarize.substring(0, maxLength);
+      wasTruncated = true;
+
+      // Try to truncate at a natural break point
+      const lastPeriod = textToSummarize.lastIndexOf('.');
+      const lastNewline = textToSummarize.lastIndexOf('\n');
+      const breakPoint = Math.max(lastPeriod, lastNewline);
+
+      if (breakPoint > maxLength * 0.8) { // Only use break point if it's not too far back
+        textToSummarize = textToSummarize.substring(0, breakPoint + 1);
+      }
+
+      textToSummarize += '\n\n[Note: Content was truncated for summarization due to length]';
+    }
+
+    const response = await fetch('/api/ai/summarize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        textToSummarize: textToSummarize,
+        summaryType: 'key-insights',
+        maxLength: 800
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to generate summary');
+    }
+
+    const result = await response.json();
+
+    // Adjust summary if content was truncated
+    let summary = result.summary;
+    if (wasTruncated) {
+      summary += '\n\nNote: This summary is based on a truncated version of the extracted data due to size limitations.';
+    }
+
+    return {
+      summary: summary,
+      stats: {
+        originalLength: input.textToSummarize.length, // Use original length
+        summaryLength: summary.length,
+        compressionRatio: Math.round((summary.length / input.textToSummarize.length) * 100),
+        processingTime: result.processingTime,
+        summaryType: result.summaryType + (wasTruncated ? ' (truncated)' : '')
+      }
+    };
+  } catch (error) {
+    console.error('Error calling summarization API:', error);
+    // Fallback to basic summary if API fails
+    const fallbackSummary = generateBasicSummary(input.textToSummarize);
+    return {
+      summary: fallbackSummary,
+      stats: {
+        originalLength: input.textToSummarize.length,
+        summaryLength: fallbackSummary.length,
+        compressionRatio: Math.round((fallbackSummary.length / input.textToSummarize.length) * 100),
+        processingTime: 0,
+        summaryType: 'fallback'
+      }
+    };
+  }
+};
+
+// Fallback function for basic summarization
+const generateBasicSummary = (text: string): string => {
+  if (!text || text.trim().length === 0) {
+    return 'No content available to summarize.';
+  }
+
+  // Extract first few sentences as a basic summary
+  const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 10);
+  const summary = sentences.slice(0, 3).join('. ').trim();
+
+  if (summary.length > 0) {
+    return `Summary: ${summary}${summary.endsWith('.') ? '' : '.'}`;
+  } else {
+    return `Summary: Content extracted with ${text.length} characters of data.`;
+  }
 };
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from '@/components/ui/separator';
@@ -38,6 +194,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   BarChart3,
   TrendingUp,
@@ -57,7 +214,8 @@ import {
   Target,
   Lightbulb,
   ArrowRight,
-  Plus
+  Plus,
+  Wand2
 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -71,6 +229,17 @@ export default function DashboardPage() {
   const [summary, setSummary] = useState<string | null>(null);
   const [isLoadingSummary, setIsLoadingSummary] = useState<boolean>(false);
   const [summaryError, setSummaryError] = useState<string | null>(null);
+  const [summaryStats, setSummaryStats] = useState<{
+    originalLength?: number;
+    summaryLength?: number;
+    compressionRatio?: number;
+    processingTime?: number;
+    summaryType?: string;
+  } | null>(null);
+
+  // Selector Assistant state
+  const [activeTab, setActiveTab] = useState<'crawler' | 'selector-assistant'>('crawler');
+  const [selectedSelectors, setSelectedSelectors] = useState<string[]>([]);
 
   // Dashboard statistics state
   const [stats, setStats] = useState({
@@ -108,12 +277,184 @@ export default function DashboardPage() {
     setSummaryError(null);
     setIsLoadingSummary(false);
 
-    // Handle UI-only feature toasts
+    // Handle Full Page Render mode
     if (values.scrapingMode === 'fullPageRender') {
-      toast({ title: "UI Demo", description: "Full Page Render scraping is a UI demonstration and not yet functional.", duration: 7000 });
+      try {
+        const response = await fetch('/api/extract/full-page-render', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            url: values.url,
+            waitTime: 5000, // Wait 5 seconds for dynamic content
+            extractionType: 'text',
+            enableJavaScript: true,
+            viewport: { width: 1920, height: 1080 }
+          })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Full Page Render extraction failed');
+        }
+
+        const result = await response.json();
+
+        // Format the extracted data with metadata
+        let formattedData = `FULL PAGE RENDER RESULTS\n`;
+        formattedData += `URL: ${result.metadata.url}\n`;
+        formattedData += `Page Title: ${result.metadata.pageTitle}\n`;
+        formattedData += `Final URL: ${result.metadata.finalUrl}\n`;
+        formattedData += `JavaScript Enabled: ${result.metadata.jsEnabled ? 'Yes' : 'No'}\n`;
+        formattedData += `Viewport: ${result.metadata.viewportSize}\n\n`;
+
+        formattedData += `PERFORMANCE METRICS:\n`;
+        formattedData += `Navigation Time: ${result.performance.navigationTime}ms\n`;
+        formattedData += `Render Time: ${result.performance.renderTime}ms\n`;
+        formattedData += `Total Time: ${result.performance.totalTime}ms\n`;
+        formattedData += `Resources Loaded: ${result.performance.resourcesLoaded}\n\n`;
+
+        formattedData += `PAGE ANALYSIS:\n`;
+        formattedData += `Has JavaScript: ${result.pageInfo.hasJavaScript ? 'Yes' : 'No'}\n`;
+        formattedData += `Single Page App: ${result.pageInfo.isSPA ? 'Yes' : 'No'}\n`;
+        formattedData += `Dynamic Content: ${result.pageInfo.dynamicContent ? 'Yes' : 'No'}\n`;
+        formattedData += `Redirects: ${result.pageInfo.redirects}\n\n`;
+
+        formattedData += `EXTRACTED CONTENT:\n`;
+        formattedData += `${result.extractedData}`;
+
+        setExtractedData(formattedData);
+
+        toast({
+          title: "Full Page Render Successful",
+          description: `Page rendered in ${result.performance.totalTime}ms. Now generating summary...`,
+        });
+
+        // Generate summary for Full Page Render extracted data
+        setIsLoadingSummary(true);
+        setSummaryError(null);
+
+        try {
+          const summaryInput: SummarizeTextInput = { textToSummarize: result.extractedData };
+          const summaryResult: SummarizeTextOutput = await summarizeText(summaryInput);
+          setSummary(summaryResult.summary);
+          setSummaryStats(summaryResult.stats || null);
+          toast({
+            title: "Summary Generated",
+            description: "AI summary has been generated for the rendered content.",
+          });
+        } catch (summaryError: any) {
+          console.error("Summary generation error:", summaryError);
+          setSummaryError(summaryError.message || "Failed to generate summary.");
+          toast({
+            title: "Summary Failed",
+            description: "Page rendered successfully, but summary generation failed.",
+            variant: "destructive",
+          });
+        } finally {
+          setIsLoadingSummary(false);
+        }
+
+      } catch (e: any) {
+        console.error("Full Page Render error:", e);
+        const errorMessage = e.message || "An unknown error occurred during full page rendering.";
+        setExtractionError(errorMessage);
+        toast({
+          title: "Full Page Render Failed",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
     }
+    // Handle API Endpoint mode
     if (values.scrapingMode === 'apiEndpoint') {
-      toast({ title: "UI Demo", description: "API Endpoint scraping is a UI demonstration and not yet functional.", duration: 7000 });
+      try {
+        const response = await fetch('/api/extract/api-endpoint', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            url: values.url,
+            method: 'GET',
+            responseFormat: 'json',
+            authentication: { type: 'none' },
+            pagination: { enabled: false },
+            timeout: 30000
+          })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'API endpoint extraction failed');
+        }
+
+        const result = await response.json();
+
+        // Format the extracted data with metadata
+        let formattedData = `API ENDPOINT EXTRACTION RESULTS\n`;
+        formattedData += `URL: ${result.metadata.url}\n`;
+        formattedData += `Method: ${result.metadata.method}\n`;
+        formattedData += `Status Code: ${result.metadata.statusCode}\n`;
+        formattedData += `Response Format: ${result.metadata.responseFormat}\n`;
+        formattedData += `Response Size: ${result.metadata.responseSize} bytes\n`;
+        formattedData += `Pages Processed: ${result.metadata.pagesProcessed}\n\n`;
+
+        formattedData += `PERFORMANCE METRICS:\n`;
+        formattedData += `Request Time: ${result.performance.requestTime}ms\n`;
+        formattedData += `Parse Time: ${result.performance.parseTime}ms\n`;
+        formattedData += `Total Time: ${result.performance.totalTime}ms\n`;
+        formattedData += `Rate Limited: ${result.performance.rateLimitHit ? 'Yes' : 'No'}\n`;
+        formattedData += `Retry Count: ${result.performance.retryCount}\n\n`;
+
+        formattedData += `API ANALYSIS:\n`;
+        formattedData += `Authentication: ${result.apiInfo.hasAuthentication ? 'Yes' : 'No'}\n`;
+        formattedData += `Content Type: ${result.apiInfo.contentType}\n`;
+        formattedData += `Data Structure: ${result.apiInfo.dataStructure}\n`;
+        formattedData += `Record Count: ${result.apiInfo.recordCount}\n\n`;
+
+        formattedData += `EXTRACTED DATA:\n`;
+        formattedData += `${result.extractedData}`;
+
+        setExtractedData(formattedData);
+
+        toast({
+          title: "API Extraction Successful",
+          description: `Extracted ${result.apiInfo.recordCount} records in ${result.performance.totalTime}ms. Now generating summary...`,
+        });
+
+        // Generate summary for API extracted data
+        setIsLoadingSummary(true);
+        setSummaryError(null);
+
+        try {
+          const summaryInput: SummarizeTextInput = { textToSummarize: result.extractedData };
+          const summaryResult: SummarizeTextOutput = await summarizeText(summaryInput);
+          setSummary(summaryResult.summary);
+          setSummaryStats(summaryResult.stats || null);
+          toast({
+            title: "Summary Generated",
+            description: "AI summary has been generated for the API data.",
+          });
+        } catch (summaryError: any) {
+          console.error("Summary generation error:", summaryError);
+          setSummaryError(summaryError.message || "Failed to generate summary.");
+          toast({
+            title: "Summary Failed",
+            description: "API data extracted successfully, but summary generation failed.",
+            variant: "destructive",
+          });
+        } finally {
+          setIsLoadingSummary(false);
+        }
+
+      } catch (e: any) {
+        console.error("API Endpoint extraction error:", e);
+        const errorMessage = e.message || "An unknown error occurred during API extraction.";
+        setExtractionError(errorMessage);
+        toast({
+          title: "API Extraction Failed",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
     }
     if (values.enablePagination) {
       toast({ title: "UI Demo", description: `Pagination (Depth: ${values.maxPaginationDepth || 'N/A'}) is a UI demonstration and not yet functional.`, duration: 7000 });
@@ -150,6 +491,7 @@ export default function DashboardPage() {
             const summarizeInput: SummarizeTextInput = { textToSummarize: extractResult.extractedData };
             const summaryResult: SummarizeTextOutput = await summarizeText(summarizeInput);
             setSummary(summaryResult.summary);
+            setSummaryStats(summaryResult.stats || null);
             toast({
               title: "Summary Generated",
               description: "AI summary has been successfully created.",
@@ -178,16 +520,100 @@ export default function DashboardPage() {
           variant: "destructive",
         });
       }
-    } else if (values.scrapingMode === 'cssSelector') { // Previously values.extractionType === 'css'
-      setExtractionError("CSS Selector extraction is not implemented in this demo if 'Smart AI' is not the primary mode. Please use Smart Extract AI for functional data extraction.");
-      toast({
-        title: "CSS Selector Not Fully Implemented",
-        description: "CSS Selector mode (without Smart AI) is a UI demonstration. Use Smart Extract AI for extraction.",
-        variant: "destructive",
-      });
+    } else if (values.scrapingMode === 'cssSelector') { // CSS Selector extraction
+      if (!values.cssSelector || values.cssSelector.trim() === '') {
+        setExtractionError("CSS Selector is required for CSS Selector mode.");
+        toast({
+          title: "CSS Selector Required",
+          description: "Please provide CSS selectors to extract data.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/extract/css-selector', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            url: values.url,
+            cssSelector: values.cssSelector,
+            extractionType: 'text'
+          })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'CSS extraction failed');
+        }
+
+        const result = await response.json();
+        setExtractedData(result.extractedData);
+
+        toast({
+          title: "CSS Extraction Successful",
+          description: `Found ${result.elementsFound} elements. Now generating summary...`,
+        });
+
+        // Generate summary for CSS extracted data
+        setIsLoadingSummary(true);
+        setSummaryError(null);
+
+        try {
+          const summaryInput: SummarizeTextInput = { textToSummarize: result.extractedData };
+          const summaryResult: SummarizeTextOutput = await summarizeText(summaryInput);
+          setSummary(summaryResult.summary);
+          setSummaryStats(summaryResult.stats || null);
+          toast({
+            title: "Summary Generated",
+            description: "AI summary has been generated for the extracted data.",
+          });
+        } catch (summaryError: any) {
+          console.error("Summary generation error:", summaryError);
+          setSummaryError(summaryError.message || "Failed to generate summary.");
+          toast({
+            title: "Summary Failed",
+            description: "Data extracted successfully, but summary generation failed.",
+            variant: "destructive",
+          });
+        } finally {
+          setIsLoadingSummary(false);
+        }
+
+      } catch (e: any) {
+        console.error("CSS Selector extraction error:", e);
+        const errorMessage = e.message || "An unknown error occurred during CSS extraction.";
+        setExtractionError(errorMessage);
+        toast({
+          title: "CSS Extraction Failed",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
     }
 
     setIsLoadingExtraction(false);
+  };
+
+  const handleSelectorsGenerated = (selectors: string[]) => {
+    setSelectedSelectors(selectors);
+    toast({
+      title: "Selectors Selected",
+      description: `${selectors.length} CSS selectors have been selected for your scraping configuration.`,
+    });
+  };
+
+  const handleSelectorsCopied = (selectorsString: string) => {
+    // Switch to crawler tab and CSS selector mode
+    setActiveTab('crawler');
+
+    // Set the CSS selector field value (this would need form context or ref)
+    // For now, we'll show a helpful message
+    toast({
+      title: "Selectors Ready",
+      description: "Switch to CSS Selector mode in the Crawler Configuration and paste the selectors.",
+      duration: 5000,
+    });
   };
 
   if (authLoading || (!user && !authLoading)) {
@@ -333,6 +759,14 @@ export default function DashboardPage() {
                   <Plus className="h-4 w-4 mr-2" />
                   New Extraction
                 </Button>
+                <Button
+                  className="w-full justify-start"
+                  variant="outline"
+                  onClick={() => setActiveTab('selector-assistant')}
+                >
+                  <Wand2 className="h-4 w-4 mr-2" />
+                  AI Selector Assistant
+                </Button>
                 <Button className="w-full justify-start" variant="outline">
                   <Calendar className="h-4 w-4 mr-2" />
                   Schedule Task
@@ -368,6 +802,10 @@ export default function DashboardPage() {
                   <p className="text-sm text-purple-800 font-medium mb-1">Export Formats</p>
                   <p className="text-xs text-purple-600">Choose JSON for APIs, CSV for spreadsheets</p>
                 </div>
+                <div className="p-3 bg-orange-50 rounded-lg">
+                  <p className="text-sm text-orange-800 font-medium mb-1">AI Selector Assistant</p>
+                  <p className="text-xs text-orange-600">Let AI analyze webpages and suggest optimal CSS selectors</p>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -376,22 +814,68 @@ export default function DashboardPage() {
           <div className="lg:col-span-6">
             <Card className="dashboard-card mb-6">
               <CardHeader>
-                <CardTitle className="text-xl">Configure Your Crawler</CardTitle>
-                <p className="text-gray-600">Set up your data extraction parameters</p>
+                <CardTitle className="text-xl">Data Extraction Tools</CardTitle>
+                <p className="text-gray-600">Configure your crawler or use AI to generate CSS selectors</p>
               </CardHeader>
               <CardContent>
-                <CrawlerForm onSubmit={handleFormSubmit} isLoading={isLoadingExtraction || isLoadingSummary} />
+                <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'crawler' | 'selector-assistant')}>
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="crawler" className="flex items-center">
+                      <Target className="h-4 w-4 mr-2" />
+                      Crawler Configuration
+                    </TabsTrigger>
+                    <TabsTrigger value="selector-assistant" className="flex items-center">
+                      <Wand2 className="h-4 w-4 mr-2" />
+                      AI Selector Assistant
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="crawler" className="mt-6">
+                    <CrawlerForm onSubmit={handleFormSubmit} isLoading={isLoadingExtraction || isLoadingSummary} />
+
+                    {selectedSelectors.length > 0 && (
+                      <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                        <h4 className="font-medium text-blue-900 mb-2">AI-Generated Selectors Available</h4>
+                        <p className="text-sm text-blue-700 mb-3">
+                          You have {selectedSelectors.length} CSS selectors from the AI Assistant.
+                          Switch to CSS Selector mode to use them.
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedSelectors.map((selector, index) => (
+                            <code key={index} className="bg-white px-2 py-1 rounded text-xs text-blue-800 border border-blue-200">
+                              {selector}
+                            </code>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="selector-assistant" className="mt-6">
+                    <SelectorAssistant
+                      onSelectorsGenerated={handleSelectorsGenerated}
+                      onSelectorsCopied={handleSelectorsCopied}
+                    />
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
 
-            {/* Results Section */}
-            <div className="space-y-6">
-              <ResultsDisplay data={extractedData} isLoading={isLoadingExtraction} error={extractionError} />
+            {/* Results Section - Only show when on crawler tab */}
+            {activeTab === 'crawler' && (
+              <div className="space-y-6">
+                <ResultsDisplay data={extractedData} isLoading={isLoadingExtraction} error={extractionError} />
 
-              {(extractedData || isLoadingSummary || summaryError) && (
-                <SummaryDisplay summary={summary} isLoading={isLoadingSummary} error={summaryError} />
-              )}
-            </div>
+                {(extractedData || isLoadingSummary || summaryError) && (
+                  <SummaryDisplay
+                    summary={summary}
+                    isLoading={isLoadingSummary}
+                    error={summaryError}
+                    summaryStats={summaryStats}
+                  />
+                )}
+              </div>
+            )}
           </div>
 
           {/* Right Sidebar - Recent Activity & Status */}

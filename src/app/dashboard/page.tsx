@@ -60,7 +60,7 @@ const smartExtract = async (input: SmartExtractInput): Promise<SmartExtractOutpu
 
     if (result.insights.mainTopics.length > 0) {
       formattedData += `MAIN TOPICS:\n`;
-      result.insights.mainTopics.forEach((topic, index) => {
+      result.insights.mainTopics.forEach((topic: any, index: number) => {
         formattedData += `${index + 1}. ${topic}\n`;
       });
       formattedData += `\n`;
@@ -68,7 +68,7 @@ const smartExtract = async (input: SmartExtractInput): Promise<SmartExtractOutpu
 
     if (result.insights.keyDataPoints.length > 0) {
       formattedData += `KEY DATA POINTS:\n`;
-      result.insights.keyDataPoints.forEach((point, index) => {
+      result.insights.keyDataPoints.forEach((point: any, index: number) => {
         formattedData += `• ${point}\n`;
       });
       formattedData += `\n`;
@@ -78,7 +78,7 @@ const smartExtract = async (input: SmartExtractInput): Promise<SmartExtractOutpu
 
     if (result.insights.recommendedActions.length > 0) {
       formattedData += `\nRECOMMENDED ACTIONS:\n`;
-      result.insights.recommendedActions.forEach((action, index) => {
+      result.insights.recommendedActions.forEach((action: any, index: number) => {
         formattedData += `${index + 1}. ${action}\n`;
       });
     }
@@ -235,7 +235,7 @@ export default function DashboardPage() {
     compressionRatio?: number;
     processingTime?: number;
     summaryType?: string;
-  } | null>(null);
+  } | undefined>(undefined);
 
   // Selector Assistant state
   const [activeTab, setActiveTab] = useState<'crawler' | 'selector-assistant'>('crawler');
@@ -337,7 +337,7 @@ export default function DashboardPage() {
           const summaryInput: SummarizeTextInput = { textToSummarize: result.extractedData };
           const summaryResult: SummarizeTextOutput = await summarizeText(summaryInput);
           setSummary(summaryResult.summary);
-          setSummaryStats(summaryResult.stats || null);
+          setSummaryStats(summaryResult.stats || undefined);
           toast({
             title: "Summary Generated",
             description: "AI summary has been generated for the rendered content.",
@@ -428,7 +428,7 @@ export default function DashboardPage() {
           const summaryInput: SummarizeTextInput = { textToSummarize: result.extractedData };
           const summaryResult: SummarizeTextOutput = await summarizeText(summaryInput);
           setSummary(summaryResult.summary);
-          setSummaryStats(summaryResult.stats || null);
+          setSummaryStats(summaryResult.stats || undefined);
           toast({
             title: "Summary Generated",
             description: "AI summary has been generated for the API data.",
@@ -491,7 +491,7 @@ export default function DashboardPage() {
             const summarizeInput: SummarizeTextInput = { textToSummarize: extractResult.extractedData };
             const summaryResult: SummarizeTextOutput = await summarizeText(summarizeInput);
             setSummary(summaryResult.summary);
-            setSummaryStats(summaryResult.stats || null);
+            setSummaryStats(summaryResult.stats || undefined);
             toast({
               title: "Summary Generated",
               description: "AI summary has been successfully created.",
@@ -563,7 +563,7 @@ export default function DashboardPage() {
           const summaryInput: SummarizeTextInput = { textToSummarize: result.extractedData };
           const summaryResult: SummarizeTextOutput = await summarizeText(summaryInput);
           setSummary(summaryResult.summary);
-          setSummaryStats(summaryResult.stats || null);
+          setSummaryStats(summaryResult.stats || undefined);
           toast({
             title: "Summary Generated",
             description: "AI summary has been generated for the extracted data.",

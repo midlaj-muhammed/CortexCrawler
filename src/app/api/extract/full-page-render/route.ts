@@ -190,7 +190,7 @@ async function performFullPageRender(url: string, options: any): Promise<FullPag
       // Configure resource blocking
       if (blockImages || blockCSS) {
         await page.setRequestInterception(true);
-        page.on('request', (req) => {
+        page.on('request', (req: any) => {
           const resourceType = req.resourceType();
           if ((blockImages && resourceType === 'image') ||
               (blockCSS && resourceType === 'stylesheet')) {
@@ -205,7 +205,7 @@ async function performFullPageRender(url: string, options: any): Promise<FullPag
       const navigationStart = Date.now();
       let redirectCount = 0;
 
-      page.on('response', (response) => {
+      page.on('response', (response: any) => {
         if (response.status() >= 300 && response.status() < 400) {
           redirectCount++;
         }
@@ -239,7 +239,7 @@ async function performFullPageRender(url: string, options: any): Promise<FullPag
       const pageInfo = await page.evaluate(() => {
         return {
           title: document.title,
-          hasJavaScript: !!window.jQuery || !!window.React || !!window.Vue || !!window.Angular,
+          hasJavaScript: !!(window as any).jQuery || !!(window as any).React || !!(window as any).Vue || !!(window as any).Angular,
           isSPA: !!(window.history && window.history.pushState),
           dynamicContent: document.querySelectorAll('[data-react-root], [ng-app], [v-app]').length > 0,
           finalUrl: window.location.href
@@ -282,7 +282,7 @@ async function performFullPageRender(url: string, options: any): Promise<FullPag
       const result: FullPageRenderResponse = {
         extractedData: extractedData.trim(),
         metadata: {
-          url: validUrl.toString(),
+          url: url,
           extractedAt: new Date().toISOString(),
           pageTitle: pageInfo.title,
           loadTime: navigationTime,

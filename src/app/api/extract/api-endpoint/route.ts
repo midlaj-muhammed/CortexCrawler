@@ -355,8 +355,8 @@ function extractDataFromJson(data: any, dataMapping?: any): any {
     return current.map(item => {
       const mapped: any = {};
       for (const [newKey, oldKey] of Object.entries(dataMapping.fields)) {
-        if (item && typeof item === 'object' && oldKey in item) {
-          mapped[newKey] = item[oldKey as string];
+        if (item && typeof item === 'object' && typeof oldKey === 'string' && oldKey in item) {
+          mapped[newKey] = (item as any)[oldKey];
         }
       }
       return Object.keys(mapped).length > 0 ? mapped : item;
